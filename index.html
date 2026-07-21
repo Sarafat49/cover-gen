@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Cover Page Generator</title>
+    <!-- Tailwind CSS for styling the UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2canvas to capture the preview -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- jsPDF to convert capture to PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- pdf-lib to merge PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    
+    <style>
+        /* Formal font for the cover page */
+        .cover-page {
+            font-family: "Times New Roman", Times, serif;
+            width: 794px; /* A4 width at 96 DPI */
+            height: 1123px; /* A4 height at 96 DPI */
+            background-color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 80px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        /* Make the preview responsive on smaller screens */
+        .preview-container {
+            transform-origin: top center;
+        }
+        @media (max-width: 1024px) {
+            .preview-container { transform: scale(0.7); height: 800px; }
+        }
+        @media (max-width: 768px) {
+            .preview-container { transform: scale(0.45); height: 520px; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800 font-sans">
+
+<div class="container mx-auto p-4 lg:flex lg:gap-8">
+    
+    <!-- LEFT PANEL: Input Forms -->
+    <div class="lg:w-1/3 bg-white p-6 rounded-lg shadow-md h-fit mb-8 lg:mb-0">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">Cover Page Details</h2>
+        
+        <div class="space-y-4">
+            <!-- Course Info -->
+            <div>
+                <label class="block text-sm font-semibold mb-1">Course Title</label>
+                <input type="text" id="in-course-title" class="w-full border p-2 rounded" value="Object Oriented Programming" oninput="updatePreview()">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold mb-1">Course Code / Report No.</label>
+                <input type="text" id="in-course-code" class="w-full border p-2 rounded" value="Lab Report – 01" oninput="updatePreview()">
+            </div>
+
+            <hr>
+
+            <!-- Student/Group Selection -->
+            <div>
+                <label class="block text-sm font-semibold mb-2">Assignment Type</label>
+                <div class="flex gap-4">
+                    <label><input type="radio" name="assignment-type" value="individual" checked onchange="toggleGroupFields()"> Individual</label>
+                    <label><input type="radio" name="assignment-type" value="group" onchange="toggleGroupFields()"> Group</label>
+                </div>
+            </div>
+
+            <!-- Individual Fields -->
+            <div id="individual-fields" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Student Name</label>
+                    <input type="text" id="in-student-name" class="w-full border p-2 rounded" value="Md. Sarafat Hossain" oninput="updatePreview()">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Student ID</label>
+                    <input type="text" id="in-student-id" class="w-full border p-2 rounded" value="202122104008" oninput="updatePreview()">
+                </div>
+            </div>
+
+            <!-- Group Fields (Hidden by default) -->
+            <div id="group-fields" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Group Name / Number (Optional)</label>
+                    <input type="text" id="in-group-name" class="w-full border p-2 rounded" placeholder="e.g., Group A" oninput="updatePreview()">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Group Members (One per line)</label>
+                    <textarea id="in-group-members" class="w-full border p-2 rounded h-24" placeholder="Name - ID&#10;Name - ID" oninput="updatePreview()"></textarea>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Teacher 1 -->
+            <div>
+                <label class="block text-sm font-semibold mb-1">Teacher 1 Name</label>
+                <input type="text" id="in-t1-name" class="w-full border p-2 rounded" value="Al Amin Biswas" oninput="updatePreview()">
+                <input type="text" id="in-t1-desig" class="w-full border p-2 rounded mt-1 text-sm" value="Lecturer," oninput="updatePreview()">
+                <input type="text" id="in-t1-dept" class="w-full border p-2 rounded mt-1 text-sm" value="Department of Computer Science and Engineering" oninput="updatePreview()">
+                <input type="text" id="in-t1-uni" class="w-full border p-2 rounded mt-1 text-sm" value="Kishoreganj University" oninput="updatePreview()">
+            </div>
+
+            <!-- Teacher 2 -->
+            <div>
+                <label class="block text-sm font-semibold mb-1 text-blue-600">Teacher 2 Name (Leave blank if only 1)</label>
+                <input type="text" id="in-t2-name" class="w-full border p-2 rounded" value="Md. Shabab Zulfikar" placeholder="Leave blank for single teacher" oninput="updatePreview()">
+                <input type="text" id="in-t2-desig" class="w-full border p-2 rounded mt-1 text-sm" value="Lecturer," oninput="updatePreview()">
+                <input type="text" id="in-t2-dept" class="w-full border p-2 rounded mt-1 text-sm" value="Department of Computer Science and Engineering" oninput="updatePreview()">
+                <input type="text" id="in-t2-uni" class="w-full border p-2 rounded mt-1 text-sm" value="Kishoreganj University" oninput="updatePreview()">
+            </div>
+
+            <hr>
+
+            <!-- Submission Date -->
+            <div>
+                <label class="block text-sm font-semibold mb-1">Submission Date</label>
+                <input type="text" id="in-date" class="w-full border p-2 rounded" value="Tuesday, 14th May, 2024" oninput="updatePreview()">
+            </div>
+            
+            <hr>
+
+            <!-- PDF Upload & Action -->
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <label class="block text-sm font-semibold mb-2">Attach Assignment PDF (Optional)</label>
+                <input type="file" id="pdf-upload" accept="application/pdf" class="w-full text-sm mb-4">
+                <button onclick="generateAndMerge()" id="generate-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
+                    Download Merged PDF
+                </button>
+                <p class="text-xs text-gray-500 mt-2 text-center" id="status-text">If no PDF is uploaded, only the cover page will be downloaded.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: Live Preview -->
+    <div class="lg:w-2/3 flex justify-center overflow-hidden bg-gray-200 rounded-lg shadow-inner p-4">
+        <div class="preview-container">
+            <!-- Actual Cover Page DOM -->
+            <div id="cover-preview" class="cover-page flex flex-col items-center justify-between">
+                
+                <!-- Header -->
+                <div class="text-center w-full mt-4">
+                    <h1 id="out-course-title" class="text-3xl font-bold mb-2">Object Oriented Programming</h1>
+                    <h2 id="out-course-code" class="text-2xl text-gray-800">Lab Report – 01</h2>
+                </div>
+
+                <!-- Logo Section (Updated with permanent URL) -->
+                <div class="my-8">
+                    <img src="https://upload.wikimedia.org/wikipedia/bn/4/49/%E0%A6%95%E0%A6%BF%E0%A6%B6%E0%A7%8B%E0%A6%B0%E0%A6%97%E0%A6%9E%E0%A7%8D%E0%A6%9C_%E0%A6%AC%E0%A6%BF%E0%A6%B6%E0%A7%8D%E0%A6%AC%E0%A6%AC%E0%A6%BF%E0%A6%A6%E0%A7%8D%E0%A6%AF%E0%A6%BE%E0%A6%B2%E0%A6%AF%E0%A6%BC_%E0%A6%B2%E0%A7%8B%E0%A6%97%E0%A7%8B.png" alt="University Logo" class="h-48 object-contain" crossorigin="anonymous">
+                </div>
+
+                <!-- Submitted By Section -->
+                <div class="w-full text-center flex flex-col items-center">
+                    <h3 class="text-2xl underline mb-3">Submitted by:</h3>
+                    
+                    <!-- Individual -->
+                    <div id="out-individual" class="text-xl leading-relaxed">
+                        Name: <span id="out-student-name">Md. Sarafat Hossain</span><br>
+                        ID: <span id="out-student-id">202122104008</span>
+                    </div>
+
+                    <!-- Group (Hidden initially) -->
+                    <div id="out-group" class="text-xl leading-relaxed hidden w-full px-20">
+                        <div id="out-group-name" class="font-bold mb-2"></div>
+                        <div id="out-group-members" class="whitespace-pre-line text-lg"></div>
+                    </div>
+                </div>
+
+                <!-- Submitted To Section -->
+                <div class="w-full mt-10">
+                    <h3 class="text-2xl underline mb-6 text-center">Submitted to:</h3>
+                    
+                    <!-- Teachers Container -->
+                    <div id="teachers-container" class="flex justify-between w-full px-10">
+                        <!-- Teacher 1 -->
+                        <div id="teacher-1-block" class="text-center max-w-[320px]">
+                            <p id="out-t1-name" class="font-bold text-xl mb-1">Al Amin Biswas</p>
+                            <p id="out-t1-desig" class="text-lg">Lecturer,</p>
+                            <p id="out-t1-dept" class="text-lg">Department of Computer Science and Engineering</p>
+                            <p id="out-t1-uni" class="text-lg">Kishoreganj University</p>
+                        </div>
+                        
+                        <!-- Teacher 2 -->
+                        <div id="teacher-2-block" class="text-center max-w-[320px]">
+                            <p id="out-t2-name" class="font-bold text-xl mb-1">Md. Shabab Zulfikar</p>
+                            <p id="out-t2-desig" class="text-lg">Lecturer,</p>
+                            <p id="out-t2-dept" class="text-lg">Department of Computer Science and Engineering</p>
+                            <p id="out-t2-uni" class="text-lg">Kishoreganj University</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Section -->
+                <div class="w-full text-center mb-8">
+                    <h3 class="text-2xl underline mb-2">Date of Submission:</h3>
+                    <p id="out-date" class="text-xl">Tuesday, 14th May, 2024</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle between Individual and Group views
+    function toggleGroupFields() {
+        const type = document.querySelector('input[name="assignment-type"]:checked').value;
+        const isGroup = type === 'group';
+        
+        document.getElementById('individual-fields').classList.toggle('hidden', isGroup);
+        document.getElementById('group-fields').classList.toggle('hidden', !isGroup);
+        
+        document.getElementById('out-individual').classList.toggle('hidden', isGroup);
+        document.getElementById('out-group').classList.toggle('hidden', !isGroup);
+        
+        updatePreview();
+    }
+
+    // Update the live preview DOM elements based on input values
+    function updatePreview() {
+        document.getElementById('out-course-title').innerText = document.getElementById('in-course-title').value;
+        document.getElementById('out-course-code').innerText = document.getElementById('in-course-code').value;
+        
+        document.getElementById('out-student-name').innerText = document.getElementById('in-student-name').value;
+        document.getElementById('out-student-id').innerText = document.getElementById('in-student-id').value;
+        
+        const groupName = document.getElementById('in-group-name').value;
+        document.getElementById('out-group-name').innerText = groupName ? `Group: ${groupName}` : '';
+        document.getElementById('out-group-members').innerText = document.getElementById('in-group-members').value;
+        
+        document.getElementById('out-t1-name').innerText = document.getElementById('in-t1-name').value;
+        document.getElementById('out-t1-desig').innerText = document.getElementById('in-t1-desig').value;
+        document.getElementById('out-t1-dept').innerText = document.getElementById('in-t1-dept').value;
+        document.getElementById('out-t1-uni').innerText = document.getElementById('in-t1-uni').value;
+
+        const t2Name = document.getElementById('in-t2-name').value.trim();
+        const t2Block = document.getElementById('teacher-2-block');
+        const container = document.getElementById('teachers-container');
+        
+        // Alignment logic: If 2 teachers, space between. If 1 teacher, center the single block.
+        if (t2Name === "") {
+            t2Block.classList.add('hidden');
+            container.classList.remove('justify-between', 'px-10');
+            container.classList.add('justify-center');
+        } else {
+            t2Block.classList.remove('hidden');
+            container.classList.remove('justify-center');
+            container.classList.add('justify-between', 'px-10');
+            
+            document.getElementById('out-t2-name').innerText = t2Name;
+            document.getElementById('out-t2-desig').innerText = document.getElementById('in-t2-desig').value;
+            document.getElementById('out-t2-dept').innerText = document.getElementById('in-t2-dept').value;
+            document.getElementById('out-t2-uni').innerText = document.getElementById('in-t2-uni').value;
+        }
+
+        document.getElementById('out-date').innerText = document.getElementById('in-date').value;
+    }
+
+    // Main function to generate cover and merge with uploaded PDF
+    async function generateAndMerge() {
+        const btn = document.getElementById('generate-btn');
+        const status = document.getElementById('status-text');
+        btn.innerText = "Processing...";
+        btn.disabled = true;
+
+        try {
+            // 1. Snapshot the preview div
+            const element = document.getElementById('cover-preview');
+            const canvas = await html2canvas(element, { 
+                scale: 2, // High resolution for text clarity
+                useCORS: true // Ensures the cross-origin logo is rendered
+            });
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+
+            // 2. Generate Cover PDF using jsPDF
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+            
+            const coverPdfBytes = pdf.output('arraybuffer');
+            
+            // 3. Check for uploaded PDF
+            const fileInput = document.getElementById('pdf-upload');
+            
+            if (fileInput.files.length === 0) {
+                // No PDF uploaded, just download the cover
+                pdf.save('Cover_Page.pdf');
+                status.innerText = "Cover page downloaded successfully!";
+            } else {
+                // PDF uploaded, proceed to merge
+                const uploadedFile = fileInput.files[0];
+                const uploadedPdfBytes = await uploadedFile.arrayBuffer();
+                
+                // Initialize pdf-lib
+                const { PDFDocument } = window.PDFLib;
+                const mergedPdf = await PDFDocument.create();
+                
+                // Load both documents
+                const coverDoc = await PDFDocument.load(coverPdfBytes);
+                const uploadedDoc = await PDFDocument.load(uploadedPdfBytes);
+                
+                // Copy Cover Page
+                const copiedCoverPages = await mergedPdf.copyPages(coverDoc, coverDoc.getPageIndices());
+                copiedCoverPages.forEach((page) => mergedPdf.addPage(page));
+                
+                // Copy Uploaded Assignment Pages
+                const copiedUploadedPages = await mergedPdf.copyPages(uploadedDoc, uploadedDoc.getPageIndices());
+                copiedUploadedPages.forEach((page) => mergedPdf.addPage(page));
+                
+                // Save and trigger download
+                const mergedPdfBytes = await mergedPdf.save();
+                const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Assignment_with_Cover.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                status.innerText = "PDFs merged and downloaded successfully!";
+            }
+        } catch (error) {
+            console.error("Error generating PDF: ", error);
+            status.innerText = "An error occurred. Check console for details.";
+            status.classList.add("text-red-600");
+        } finally {
+            btn.innerText = "Download Merged PDF";
+            btn.disabled = false;
+        }
+    }
+
+    // Initialize layout on load
+    updatePreview();
+</script>
+
+</body>
+</html>
